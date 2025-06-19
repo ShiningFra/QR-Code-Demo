@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API QR Code - Démonstration</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qr-scanner/1.4.2/qr-scanner.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 40px 0;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .page {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+        }
+
+        .btn.success {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+        }
+
+        .card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .ticket {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border: 2px dashed #667eea;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .qr-display {
+            margin: 20px auto;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            display: inline-block;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .scanner-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        #qr-video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .demo-section {
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            background: #fafbfc;
+        }
+
+        .demo-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .interface-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .toggle-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .interface {
+            display: none;
+        }
+
+        .interface.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎫 API QR Code Demo</h1>
+            <p>Démonstration complète de l'API de génération et scan de codes QR pour billets</p>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" onclick="showPage('home')">🏠 Accueil</button>
+            <button class="btn secondary" onclick="showPage('howto')">📚 Comment Utiliser</button>
+            <button class="btn success" onclick="showPage('demo')">🚀 Mini Site Exemple</button>
+        </div>
+
+        <!-- Page d'accueil -->
+        <div id="home" class="page active">
+            <h2>🎯 Bienvenue sur la démonstration de l'API QR Code</h2>
+            
+            <div class="card">
+                <h3>🔧 Fonctionnalités de l'API</h3>
+                <p>Cette API permet de gérer des codes QR sécurisés pour des billets de transport avec les endpoints suivants :</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>/api/reserve</strong> - Authentification et réservation de token</li>
+                    <li><strong>/api/qr/generate</strong> - Génération de codes QR sécurisés</li>
+                    <li><strong>/api/qr/scan</strong> - Scan et validation des codes QR</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>📖 Sections disponibles</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 15px;">
+                    <div style="padding: 20px; background: white; border-radius: 8px; border: 1px solid #e1e5e9;">
+                        <h4>📚 Comment Utiliser</h4>
+                        <p>Découvrez les différents cas d'usage avec des exemples de code JavaScript pour implémenter les fonctionnalités.</p>
+                    </div>
+                    <div style="padding: 20px; background: white; border-radius: 8px; border: 1px solid #e1e5e9;">
+                        <h4>🚀 Mini Site Exemple</h4>
+                        <p>Testez l'API en direct avec des interfaces client et chauffeur complètes incluant la génération et le scan de QR codes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Comment Utiliser -->
+        <div id="howto" class="page">
+            <h2>📚 Comment Utiliser l'API</h2>
+
+            <div class="demo-section">
+                <h3>🎫 1. Génération de Billets Physiques avec QR Code</h3>
+                <p>Cas d'usage : Génération de billets physiques imprimables avec codes QR pour validation.</p>
+                
+                <div class="ticket">
+                    <h4>🚌 Ticket de Transport</h4>
+                    <div class="qr-display" id="physical-qr"></div>
+                    <div>
+                        <strong>Course:</strong> 987654<br>
+                        <strong>De:</strong> Gare Centrale<br>
+                        <strong>Date:</strong> 07/02/2025 à 14:30<br>
+                        <strong>Chauffeur:</strong> 654321<br>
+                        <strong>Client:</strong> 123456
+                    </div>
+                </div>
+
+                <button class="btn" onclick="generatePhysicalDemo()">🔄 Générer un nouveau billet</button>
+                <button class="btn secondary" onclick="scanPhysicalDemo()">📱 Simuler le scan</button>
+
+                <div id="physical-scan-result"></div>
+
+                <h4>💻 Code JavaScript d'implémentation</h4>
+                <div class="code-block">
+// 1. Authentification
+async function getAuthToken() {
+    const response = await fetch('/api/reserve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fournisseur: 'NomDuFournisseur' })
+    });
+    const data = await response.json();
+    return data.token;
+}
+
+// 2. Génération du QR Code pour billet physique
+async function generatePhysicalTicket(ticketData) {
+    const token = await getAuthToken();
+    const secret = 'your-32-character-secret-key-here';
+    const expirationMillis = 24 * 60 * 60 * 1000; // 24h
+    
+    const response = await fetch(`/api/qr/generate?secret=${secret}&expirationMillis=${expirationMillis}`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(ticketData)
+    });
+    
+    return response.blob(); // Image PNG du QR code
+}
+
+// 3. Scan du QR Code
+async function scanQRCode(qrCodeData, scanHistory) {
+    const token = await getAuthToken();
+    const secret = 'your-32-character-secret-key-here';
+    
+    const response = await fetch(`/api/qr/scan?qrCodeData=${qrCodeData}&secret=${secret}`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(scanHistory)
+    });
+    
+    if (response.ok) {
+        return await response.json(); // Données du billet
+    } else {
+        throw new Error('QR Code invalide ou expiré');
+    }
+}
+                </div>
+            </div>
+
+            <div class="demo-section">
+                <h3>📱 2. Billets Électroniques à Usage Unique</h3>
+                <p>Cas d'usage : Billets électroniques qui expirent automatiquement après un scan validé.</p>
+                
+                <div class="ticket">
+                    <h4>📱 E-Ticket</h4>
+                    <div class="qr-display" id="electronic-qr"></div>
+                    <div>
+                        <strong>Statut:</strong> <span id="electronic-status">✅ Valide</span><br>
+                        <strong>Course:</strong> 987655<br>
+                        <strong>De:</strong> Aéroport<br>
+                        <strong>Date:</strong> 07/02/2025 à 16:45<br>
+                        <strong>Expire:</strong> <span id="electronic-expiry">Dans 30 min</span>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="generateElectronicDemo()">🔄 Générer e-ticket</button>
+                <button class="btn secondary" onclick="scanElectronicDemo()">📱 Simuler validation</button>
+
+                <div id="electronic-scan-result"></div>
+
+                <h4>💻 Code JavaScript d'implémentation</h4>
+                <div class="code-block">
+// Gestion des billets électroniques à usage unique
+class ElectronicTicketManager {
+    constructor() {
+        this.tickets = new Map();
+    }
+    
+    // Génération d'un billet électronique
+    async generateElectronicTicket(ticketData) {
+        const token = await getAuthToken();
+        const secret = 'your-32-character-secret-key-here';
+        const expirationMillis = 30 * 60 * 1000; // 30 minutes
+        
+        const response = await fetch(`/api/qr/generate?secret=${secret}&expirationMillis=${expirationMillis}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(ticketData)
+        });
+        
+        const qrBlob = await response.blob();
+        const ticketId = ticketData.courseId;
+        
+        // Stocker le ticket avec son statut
+        this.tickets.set(ticketId, {
+            data: ticketData,
+            status: 'valid',
+            qrBlob: qrBlob,
+            expiresAt: Date.now() + expirationMillis
+        });
+        
+        return { ticketId, qrBlob };
+    }
+    
+    // Validation et expiration du billet
+    async validateTicket(ticketId, qrCodeData) {
+        const ticket = this.tickets.get(ticketId);
+        
+        if (!ticket || ticket.status !== 'valid') {
+            throw new Error('Billet invalide ou déjà utilisé');
+        }
+        
+        if (Date.now() > ticket.expiresAt) {
+            ticket.status = 'expired';
+            throw new Error('Billet expiré');
+        }
+        
+        try {
+            const token = await getAuthToken();
+            const secret = 'your-32-character-secret-key-here';
+            
+            const response = await fetch(`/api/qr/scan?qrCodeData=${qrCodeData}&secret=${secret}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    scanTime: new Date().toISOString(),
+                    ticketId: ticketId
+                })
+            });
+            
+            if (response.ok) {
+                // Marquer le billet comme utilisé
+                ticket.status = 'used';
+                ticket.usedAt = Date.now();
+                
+                return await response.json();
+            } else {
+                throw new Error('Échec de la validation');
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
+    
+    // Vérifier le statut d'un billet
+    getTicketStatus(ticketId) {
+        const ticket = this.tickets.get(ticketId);
+        if (!ticket) return 'not_found';
+        
+        if (Date.now() > ticket.expiresAt && ticket.status === 'valid') {
+            ticket.status = 'expired';
+        }
+        
+        return ticket.status;
+    }
+}
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Mini Site Exemple -->
+        <div id="demo" class="page">
+            <h2>🚀 Mini Site Exemple</h2>
+
+            <div class="demo-section">
+                <h3>🎮 Démonstration Intégrée</h3>
+                <p>Vue fusionnée client/chauffeur pour tester le processus complet</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                    <div class="ticket">
+                        <h4>👤 Vue Client</h4>
+                        <div class="qr-display" id="demo-client-qr"></div>
+                        <div id="demo-client-info">
+                            <strong>Statut:</strong> <span id="demo-client-status">En attente...</span><br>
+                            <strong>Course:</strong> <span id="demo-course-id">-</span><br>
+                            <strong>Destination:</strong> <span id="demo-destination">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="ticket">
+                        <h4>🚗 Vue Chauffeur</h4>
+                        <div id="demo-driver-scanner">
+                            <button class="btn" onclick="simulateScan()">📱 Simuler Scan</button>
+                        </div>
+                        <div id="demo-driver-info" style="display: none;">
+                            <div id="demo-scan-details"></div>
+                            <button class="btn success" onclick="validateTransaction()" id="validate-btn" style="display: none;">✅ Valider Transaction</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="startIntegratedDemo()">🎬 Démarrer Démo</button>
+                <div id="demo-status"></div>
+            </div>
+
+            <div class="demo-section">
+                <h3>🔧 Interface Interactive Complète</h3>
+                <p>Testez l'API avec des interfaces séparées client/chauffeur</p>
+                
+                <div class="interface-toggle">
+                    <button class="toggle-btn active" onclick="switchInterface('client')">👤 Interface Client</button>
+                    <button class="toggle-btn" onclick="switchInterface('driver')">🚗 Interface Chauffeur</button>
+                </div>
+
+                <!-- Interface Client -->
+                <div id="client-interface" class="interface active">
+                    <h4>👤 Interface Client - Génération de Billet</h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <div class="form-group">
+                                <label>ID Client</label>
+                                <input type="number" id="client-id" value="123456">
+                            </div>
+                            <div class="form-group">
+                                <label>ID Chauffeur</label>
+                                <input type="number" id="driver-id" value="654321">
+                            </div>
+                            <div class="form-group">
+                                <label>ID Course</label>
+                                <input type="number" id="course-id" value="987654">
+                            </div>
+                            <div class="form-group">
+                                <label>Destination</label>
+                                <input type="text" id="destination" value="Gare Centrale">
+                            </div>
+                            <div class="form-group">
+                                <label>Heure</label>
+                                <input type="time" id="time" value="14:30">
+                            </div>
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" id="date" value="2025-02-07">
+                            </div>
+                            <div class="form-group">
+                                <label>Ville</label>
+                                <input type="text" id="city" value="Paris">
+                            </div>
+                            <div class="form-group">
+                                <label>Pays</label>
+                                <input type="text" id="country" value="France">
+                            </div>
+                            
+                            <button class="btn" onclick="generateClientTicket()">🎫 Générer Billet</button>
+                        </div>
+                        
+                        <div class="ticket">
+                            <h4>🎫 Votre Billet</h4>
+                            <div class="qr-display" id="client-qr-code"></div>
+                            <div id="client-ticket-info">
+                                <div id="client-status-display">Générez votre billet</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interface Chauffeur -->
+                <div id="driver-interface" class="interface">
+                    <h4>🚗 Interface Chauffeur - Scan et Validation</h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <div class="form-group">
+                                <label>ID Chauffeur</label>
+                                <input type="number" id="driver-scan-id" value="654321">
+                            </div>
+                            
+                            <div class="scanner-container">
+                                <button class="btn" onclick="startCamera()">📹 Démarrer Caméra</button>
+                                <button class="btn secondary" onclick="stopCamera()">⏹️ Arrêter Caméra</button>
+                                <video id="qr-video" style="display: none;"></video>
+                                <div id="scan-result"></div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Ou entrez le code QR manuellement:</label>
+                                <input type="text" id="manual-qr-input" placeholder="Collez le contenu du QR code ici">
+                                <button class="btn" onclick="scanManualQR()">🔍 Scanner</button>
+                            </div>
+                        </div>
+                        
+                        <div class="ticket">
+                            <h4>📋 Informations du Billet</h4>
+                            <div id="driver-scan-info">
+                                <div class="status info">En attente du scan...</div>
+                            </div>
+                            <button class="btn success" onclick="validateDriverTransaction()" id="driver-validate-btn" style="display: none;">✅ Valider Transaction</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Variables globales
+        let currentTicketData = null;
+        let demoTicketData = null;
+        let isScanning = false;
+        let qrScanner = null;
+
+        // Gestion de la navigation
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        // Gestion des billets électroniques à usage unique
+class ElectronicTicketManager {
+    constructor() {
+        this.tickets = new Map();
+    }
+    
+    // Génération d'un billet électronique
+    async generateElectronicTicket(ticketData) {
+        const token = await getAuthToken();
+        const secret = 'your-32-character-secret-key-here';
+        const expirationMillis = 30 * 60 * 1000; // 30 minutes
+        
+        const response = await fetch(`/api/qr/generate?secret=${secret}&expirationMillis=${expirationMillis}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(ticketData)
+        });
+        
+        const qrBlob = await response.blob();
+        const ticketId = ticketData.courseId;
+        
+        // Stocker le ticket avec son statut
+        this.tickets.set(ticketId, {
+            data: ticketData,
+            status: 'valid',
+            qrBlob: qrBlob,
+            expiresAt: Date.now() + expirationMillis
+        });
+        
+        return { ticketId, qrBlob };
+    }
+    
+    // Validation et expiration du billet
+    async validateTicket(ticketId, qrCodeData) {
+        const ticket = this.tickets.get(ticketId);
+        
+        if (!ticket || ticket.status !== 'valid') {
+            throw new Error('Billet invalide ou déjà utilisé');
+        }
+        
+        if (Date.now() > ticket.expiresAt) {
+            ticket.status = 'expired';
+            throw new Error('Billet expiré');
+        }
+        
+        try {
+            const token = await getAuthToken();
+            const secret = 'your-32-character-secret-key-here';
+            
+            const response = await fetch(`/api/qr/scan?qrCodeData=${qrCodeData}&secret=${secret}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    scanTime: new Date().toISOString(),
+                    ticketId: ticketId
+                })
+            });
+            
+            if (response.ok) {
+                // Marquer le billet comme utilisé
+                ticket.status = 'used';
+                ticket.usedAt = Date.now();
+                
+                return await response.json();
+            } else {
+                throw new Error('Échec de la validation');
+            }
+        } catch (error) {
+            throw error;
+        }
+    }
+    
+    // Vérifier le statut d'un billet
+    getTicketStatus(ticketId) {
+        const ticket = this.tickets.get(ticketId);
+        if (!ticket) return 'not_found';
+        
+        if (Date.now() > ticket.expiresAt && ticket.status === 'valid') {
+            ticket.status = 'expired';
+        }
+        
+        return ticket.status;
+    }
+}
+// 1. Authentification
+async function getAuthToken() {
+    const response = await fetch('/api/reserve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fournisseur: 'NomDuFournisseur' })
+    });
+    const data = await response.json();
+    return data.token;
+}
+
+// 2. Génération du QR Code pour billet physique
+async function generatePhysicalTicket(ticketData) {
+    const token = await getAuthToken();
+    const secret = 'your-32-character-secret-key-here';
+    const expirationMillis = 24 * 60 * 60 * 1000; // 24h
+    
+    const response = await fetch(`/api/qr/generate?secret=${secret}&expirationMillis=${expirationMillis}`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(ticketData)
+    });
+    
+    return response.blob(); // Image PNG du QR code
+}
+
+// 3. Scan du QR Code
+async function scanQRCode(qrCodeData, scanHistory) {
+    const token = await getAuthToken();
+    const secret = 'your-32-character-secret-key-here';
+    
+    const response = await fetch(`/api/qr/scan?qrCodeData=${qrCodeData}&secret=${secret}`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(scanHistory)
+    });
+    
+    if (response.ok) {
+        return await response.json(); // Données du billet
+    } else {
+        throw new Error('QR Code invalide ou expiré');
+    }
+}
+
+        // === SECTION DEMOS COMMENT UTILISER ===
+
+        // Génération démo billet physique
+        function generatePhysicalDemo() {
+            const ticketData = {
+                clientId: 123456,
+                chauffeurId: 654321,
+                courseId: 987654,
+                lieu: "Gare Centrale",
+                heure: "14:30",
+                date: "2025-02-07",
+                ville: "Paris",
+                pays: "France",
+                fournisseur: "DemoFournisseur"
+            };
+
+            // Simulation de génération QR avec QRCode.js
+            const qrContainer = document.getElementById('physical-qr');
+            qrContainer.innerHTML = '';
+            
+            QRCode.toCanvas(qrContainer, JSON.stringify(ticketData), {
+                width: 200,
+                height: 200,
+                margin: 2
+            }, function (error) {
+                if (error) console.error(error);
+            });
+
+            document.getElementById('physical-scan-result').innerHTML = 
+                '<div class="status info">✨ Nouveau billet généré! Prêt pour le scan.</div>';
+        }
+
+        // Scan démo billet physique
+        function scanPhysicalDemo() {
+            const resultDiv = document.getElementById('physical-scan-result');
+            resultDiv.innerHTML = '<div class="status info">🔍 Scan en cours...</div>';
+            
+            setTimeout(() => {
+                resultDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Scan réussi!<br>
+                        <strong>Billet validé:</strong><br>
+                        Course: 987654<br>
+                        Client: 123456<br>
+                        Destination: Gare Centrale<br>
+                        Statut: Valide
+                    </div>
+                `;
+            }, 1500);
+        }
+
+        // Génération démo billet électronique
+        function generateElectronicDemo() {
+            const ticketData = {
+                clientId: 123457,
+                chauffeurId: 654322,
+                courseId: 987655,
+                lieu: "Aéroport",
+                heure: "16:45",
+                date: "2025-02-07",
+                ville: "Paris",
+                pays: "France",
+                fournisseur: "DemoFournisseur"
+            };
+
+            const qrContainer = document.getElementById('electronic-qr');
+            qrContainer.innerHTML = '';
+            
+            QRCode.toCanvas(qrContainer, JSON.stringify(ticketData), {
+                width: 200,
+                height: 200,
+                margin: 2
+            }, function (error) {
+                if (error) console.error(error);
+            });
+
+            document.getElementById('electronic-status').innerHTML = '✅ Valide';
+            document.getElementById('electronic-expiry').innerHTML = 'Dans 30 min';
+            document.getElementById('electronic-scan-result').innerHTML = 
+                '<div class="status info">✨ E-ticket généré! Valide pour 30 minutes.</div>';
+        }
+
+        // Scan démo billet électronique
+        function scanElectronicDemo() {
+            const resultDiv = document.getElementById('electronic-scan-result');
+            const statusSpan = document.getElementById('electronic-status');
+            
+            resultDiv.innerHTML = '<div class="status info">🔍 Validation en cours...</div>';
+            
+            setTimeout(() => {
+                statusSpan.innerHTML = '❌ Utilisé';
+                resultDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Billet validé et marqué comme utilisé!<br>
+                        <strong>Transaction terminée</strong><br>
+                        Le billet ne peut plus être réutilisé.
+                    </div>
+                `;
+            }, 1500);
+        }
+
+        // === SECTION DEMOS INTEGRÉES ===
+
+        // Démarrer démo intégrée
+        function startIntegratedDemo() {
+            demoTicketData = {
+                clientId: Math.floor(Math.random() * 900000) + 100000,
+                chauffeurId: 654321,
+                courseId: Math.floor(Math.random() * 900000) + 100000,
+                lieu: "Centre Ville",
+                heure: new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+                date: new Date().toISOString().split('T')[0],
+                ville: "Douala",
+                pays: "Cameroun",
+                fournisseur: "DemoTransport"
+            };
+
+            // Afficher les infos client
+            document.getElementById('demo-course-id').textContent = demoTicketData.courseId;
+            document.getElementById('demo-destination').textContent = demoTicketData.lieu;
+            document.getElementById('demo-client-status').textContent = '✅ Billet actif';
+
+            // Générer QR code
+            const qrContainer = document.getElementById('demo-client-qr');
+            qrContainer.innerHTML = '';
+            
+            QRCode.toCanvas(qrContainer, JSON.stringify(demoTicketData), {
+                width: 180,
+                height: 180,
+                margin: 2
+            }, function (error) {
+                if (error) console.error(error);
+            });
+
+            document.getElementById('demo-status').innerHTML = 
+                '<div class="status success">🎫 Billet généré! Le chauffeur peut maintenant scanner.</div>';
+        }
+
+        // Simuler scan intégré
+        function simulateScan() {
+            if (!demoTicketData) {
+                document.getElementById('demo-status').innerHTML = 
+                    '<div class="status error">❌ Générez d\'abord un billet!</div>';
+                return;
+            }
+
+            document.getElementById('demo-status').innerHTML = 
+                '<div class="status info">🔍 Scan en cours...</div>';
+
+            setTimeout(() => {
+                const driverInfo = document.getElementById('demo-driver-info');
+                const scanDetails = document.getElementById('demo-scan-details');
+                
+                scanDetails.innerHTML = `
+                    <strong>📋 Détails du billet:</strong><br>
+                    Course: ${demoTicketData.courseId}<br>
+                    Client: ${demoTicketData.clientId}<br>
+                    Destination: ${demoTicketData.lieu}<br>
+                    Heure: ${demoTicketData.heure}<br>
+                    Date: ${demoTicketData.date}
+                `;
+                
+                driverInfo.style.display = 'block';
+                document.getElementById('validate-btn').style.display = 'inline-block';
+                
+                document.getElementById('demo-status').innerHTML = 
+                    '<div class="status success">✅ QR Code scanné avec succès! Chauffeur, validez la transaction.</div>';
+            }, 2000);
+        }
+
+        // Valider transaction intégrée
+        function validateTransaction() {
+            document.getElementById('demo-client-status').textContent = '✅ Voyage validé';
+            document.getElementById('validate-btn').style.display = 'none';
+            
+            document.getElementById('demo-status').innerHTML = `
+                <div class="status success">
+                    🎉 Transaction validée avec succès!<br>
+                    Le client et le chauffeur reçoivent la confirmation.
+                </div>
+            `;
+        }
+
+        // === INTERFACES SÉPARÉES ===
+
+        // Basculer entre interfaces
+        function switchInterface(type) {
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.interface').forEach(iface => {
+                iface.classList.remove('active');
+            });
+
+            if (type === 'client') {
+                document.querySelector('.toggle-btn').classList.add('active');
+                document.getElementById('client-interface').classList.add('active');
+            } else {
+                document.querySelectorAll('.toggle-btn')[1].classList.add('active');
+                document.getElementById('driver-interface').classList.add('active');
+            }
+        }
+
+        // Générer billet client
+        function generateClientTicket() {
+            const ticketData = {
+                clientId: parseInt(document.getElementById('client-id').value),
+                chauffeurId: parseInt(document.getElementById('driver-id').value),
+                courseId: parseInt(document.getElementById('course-id').value),
+                lieu: document.getElementById('destination').value,
+                heure: document.getElementById('time').value,
+                date: document.getElementById('date').value,
+                ville: document.getElementById('city').value,
+                pays: document.getElementById('country').value,
+                fournisseur: "ClientDemo"
+            };
+
+            currentTicketData = ticketData;
+
+            // Générer QR code
+            const qrContainer = document.getElementById('client-qr-code');
+            qrContainer.innerHTML = '';
+            
+            QRCode.toCanvas(qrContainer, JSON.stringify(ticketData), {
+                width: 200,
+                height: 200,
+                margin: 2
+            }, function (error) {
+                if (error) console.error(error);
+            });
+
+            document.getElementById('client-ticket-info').innerHTML = `
+                <div class="status success">
+                    ✅ Billet généré avec succès!<br>
+                    <strong>Course:</strong> ${ticketData.courseId}<br>
+                    <strong>Destination:</strong> ${ticketData.lieu}<br>
+                    <strong>Date:</strong> ${ticketData.date} à ${ticketData.heure}<br>
+                    <strong>Statut:</strong> <span id="client-ticket-status">En attente de validation</span>
+                </div>
+            `;
+        }
+
+        // Démarrer caméra pour scan
+        async function startCamera() {
+            try {
+                const video = document.getElementById('qr-video');
+                video.style.display = 'block';
+                
+                if (!qrScanner) {
+                    qrScanner = new QrScanner(video, result => {
+                        processScannedQR(result.data);
+                        stopCamera();
+                    });
+                }
+                
+                await qrScanner.start();
+                isScanning = true;
+                
+                document.getElementById('scan-result').innerHTML = 
+                    '<div class="status info">📹 Caméra active. Présentez le QR code.</div>';
+            } catch (error) {
+                document.getElementById('scan-result').innerHTML = 
+                    '<div class="status error">❌ Erreur caméra: ' + error.message + '</div>';
+            }
+        }
+
+        // Arrêter caméra
+        function stopCamera() {
+            if (qrScanner && isScanning) {
+                qrScanner.stop();
+                isScanning = false;
+                document.getElementById('qr-video').style.display = 'none';
+                
+                if (document.getElementById('scan-result').innerHTML.includes('Caméra active')) {
+                    document.getElementById('scan-result').innerHTML = 
+                        '<div class="status info">📹 Caméra arrêtée.</div>';
+                }
+            }
+        }
+
+        // Scanner QR manuel
+        function scanManualQR() {
+            const qrInput = document.getElementById('manual-qr-input').value.trim();
+            if (!qrInput) {
+                document.getElementById('scan-result').innerHTML = 
+                    '<div class="status error">❌ Veuillez entrer un code QR.</div>';
+                return;
+            }
+
+            processScannedQR(qrInput);
+            document.getElementById('manual-qr-input').value = '';
+        }
+
+        // Traiter QR scanné
+        function processScannedQR(qrData) {
+            try {
+                const ticketData = JSON.parse(qrData);
+                
+                document.getElementById('driver-scan-info').innerHTML = `
+                    <div class="status success">
+                        ✅ QR Code valide!<br><br>
+                        <strong>📋 Informations du billet:</strong><br>
+                        <strong>Course:</strong> ${ticketData.courseId}<br>
+                        <strong>Client:</strong> ${ticketData.clientId}<br>
+                        <strong>Chauffeur:</strong> ${ticketData.chauffeurId}<br>
+                        <strong>Destination:</strong> ${ticketData.lieu}<br>
+                        <strong>Date:</strong> ${ticketData.date}<br>
+                        <strong>Heure:</strong> ${ticketData.heure}<br>
+                        <strong>Ville:</strong> ${ticketData.ville}<br>
+                        <strong>Pays:</strong> ${ticketData.pays}
+                    </div>
+                `;
+
+                document.getElementById('driver-validate-btn').style.display = 'inline-block';
+                
+                // Notifier le client si c'est le même billet
+                if (currentTicketData && currentTicketData.courseId === ticketData.courseId) {
+                    const clientStatus = document.getElementById('client-ticket-status');
+                    if (clientStatus) {
+                        clientStatus.textContent = '🔍 Billet scanné par le chauffeur';
+                    }
+                }
+
+            } catch (error) {
+                document.getElementById('driver-scan-info').innerHTML = 
+                    '<div class="status error">❌ QR Code invalide ou format incorrect.</div>';
+                document.getElementById('driver-validate-btn').style.display = 'none';
+            }
+        }
+
+        // Valider transaction chauffeur
+        function validateDriverTransaction() {
+            document.getElementById('driver-scan-info').innerHTML += `
+                <div class="status success" style="margin-top: 15px;">
+                    🎉 Transaction validée avec succès!<br>
+                    Le voyage peut commencer.
+                </div>
+            `;
+
+            document.getElementById('driver-validate-btn').style.display = 'none';
+
+            // Notifier le client
+            const clientStatus = document.getElementById('client-ticket-status');
+            if (clientStatus) {
+                clientStatus.textContent = '✅ Billet validé - Bon voyage!';
+            }
+        }
+
+        // Initialisation des démos au chargement
+        window.addEventListener('load', function() {
+            generatePhysicalDemo();
+            generateElectronicDemo();
+        });
+    </script>
+</body>
+</html>
